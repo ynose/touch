@@ -1,0 +1,59 @@
+<job>
+
+<script language="vbscript">
+
+Option Explicit
+
+Dim objParm
+Dim strFileName
+Dim objFileSys
+Dim objShell
+Dim objFolder
+Dim objFile
+
+
+Call Main
+
+' Main   ------------------------------------------------------------------------------------------
+Sub Main
+
+    Set objParm = Wscript.Arguments
+    If objParm.Count > 0 Then
+        strFileName = LCase(objParm(0))
+    Else
+        EchoUsage "TOUCH file-name" 
+        WScript.Quit
+    End If
+
+    On Error Resume Next
+    Set objFileSys = CreateObject("Scripting.FileSystemObject")
+    Set objShell = WScript.CreateObject("Shell.Application")
+
+    Dim strWorkingPath: strWorkingPath = objFileSys.GetAbsolutePathName(".\")
+    Set objFolder = objShell.NameSpace(strWorkingPath)
+    Set objFile = objFolder.ParseName(strFileName)
+
+    'WScript.Echo strWorkingPath
+    WScript.Echo "old: " & strFileName & " " & objFileSys.GetFile(strFileName).DateLastModified
+
+    objFile.ModifyDate = Now()  ' ファイルが読み取り専用でもタイムスタンプは変更される
+    If Err.Number = 0 Then
+        WScript.Echo "new: " & strFileName & " " & objFileSys.GetFile(strFileName).DateLastModified
+    Else
+        WScript.Echo Err.Description
+    End If
+
+
+    Set objFile = Nothing
+    Set objFolder = Nothing
+    Set objShell = Nothing
+    Set objFileSys = Nothing
+
+End Sub
+
+Sub EchoUsage(str)
+    WScript.echo "Usage: " & str
+End Sub
+
+</script>
+</job>
