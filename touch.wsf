@@ -29,20 +29,39 @@ Sub Main
     Set objFileSys = CreateObject("Scripting.FileSystemObject")
     Set objShell = WScript.CreateObject("Shell.Application")
 
-    Dim strWorkingPath: strWorkingPath = objFileSys.GetAbsolutePathName(".\")
-    Set objFolder = objShell.NameSpace(strWorkingPath)
-    Set objFile = objFolder.ParseName(strFileName)
-
-    'WScript.Echo strWorkingPath
-    WScript.Echo "old: " & strFileName & " " & objFileSys.GetFile(strFileName).DateLastModified
-
-    objFile.ModifyDate = Now()  ' ファイルが読み取り専用でもタイムスタンプは変更される
-    If Err.Number = 0 Then
-        WScript.Echo "new: " & strFileName & " " & objFileSys.GetFile(strFileName).DateLastModified
+    Dim strWorkingPath: strWorkingPath = objFileSys.GetParentFolderName(strFileName)
+    If strWorkingPath = "" Then
+        ' ファイル名のみ指定
+        strWorkingPath = objFileSys.GetAbsolutePathName(".\")
     Else
-        WScript.Echo Err.Description
+        ' フルパス指定(ドラッグ＆ドロップの場合も)
+        strFileName = objFileSys.GetFileName(strFileName)
     End If
 
+    Set objFolder = objShell.NameSpace(strWorkingPath)
+    Set objFile = objFolder.ParseName(strFileName)
+    Dim strFullPath: strFullPath = objFileSys.BuildPath(strWorkingPath, strFileName)
+
+    If objFileSys.FileExists(strFullPath) = True Then
+
+        Dim strOldTime: strOldTime = objFileSys.GetFile(strFullPath).DateLastModified
+
+        ' 更新日時を現在日時に変更
+        objFile.ModifyDate = Now()  ' ファイルが読み取り専用でもタイムスタンプは変更される
+        If Err.Number <> 0 Then
+            WScript.Echo Err.Description
+        End If
+
+        Dim strNewTime: strNewTime = objFileSys.GetFile(strFullPath).DateLastModified
+
+
+        ' 結果表示
+        WScript.Echo strFullPath & vbCRLF & _
+                     "  " & strOldTime & vbCRLF & _
+                     "  " & strNewTime
+    Else
+        WScript.Echo "File not found"
+    End If
 
     Set objFile = Nothing
     Set objFolder = Nothing
